@@ -176,7 +176,7 @@ services:
   # ── Vue 3 Frontend (Static Site) ──────────────────────────────────────────
   - type: web
     name: churchos-frontend
-    region: oregon
+    # region: oregon
     plan: free
     runtime: static
     rootDir: frontend
