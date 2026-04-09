@@ -1,0 +1,221 @@
+/* ChurchOS Global Styles */
+:root {
+  --cos-primary: #1a6b3c;
+  --cos-primary-dark: #125230;
+  --cos-primary-light: #e8f5ee;
+  --cos-secondary: #2c2c2c;
+  --cos-accent: #c9a84c;
+  --cos-accent-light: #f5e9c9;
+  --cos-sidebar-bg: #1a1a2e;
+  --cos-sidebar-text: rgba(255,255,255,0.75);
+  --cos-sidebar-active: rgba(255,255,255,0.12);
+  --cos-sidebar-width: 260px;
+  --cos-topbar-height: 60px;
+  --cos-border: #e8e8e8;
+  --cos-bg: #f5f6fa;
+  --cos-card-bg: #ffffff;
+  --cos-text: #1a1a2e;
+  --cos-text-muted: #6c757d;
+  --cos-success: #198754;
+  --cos-danger: #dc3545;
+  --cos-warning: #ffc107;
+  --cos-info: #0dcaf0;
+  --cos-radius: 10px;
+  --cos-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  --cos-shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+  --cos-transition: all 0.2s ease;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--cos-bg);
+  color: var(--cos-text);
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #aaa; }
+
+/* ── Cards ── */
+.cos-card {
+  background: var(--cos-card-bg);
+  border-radius: var(--cos-radius);
+  box-shadow: var(--cos-shadow);
+  border: 1px solid var(--cos-border);
+  padding: 1.25rem;
+}
+
+/* ── Stat Cards ── */
+.stat-card {
+  background: var(--cos-card-bg);
+  border-radius: var(--cos-radius);
+  box-shadow: var(--cos-shadow);
+  border: 1px solid var(--cos-border);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: var(--cos-transition);
+}
+.stat-card:hover { box-shadow: var(--cos-shadow-lg); transform: translateY(-1px); }
+.stat-card .stat-icon {
+  width: 52px; height: 52px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.stat-card .stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--cos-text);
+}
+.stat-card .stat-label {
+  font-size: 12px;
+  color: var(--cos-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+.stat-card .stat-trend {
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ── Page Header ── */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.page-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--cos-text);
+  margin: 0;
+}
+.page-subtitle {
+  font-size: 13px;
+  color: var(--cos-text-muted);
+  margin: 2px 0 0;
+}
+
+/* ── Buttons ── */
+.btn-primary {
+  background: var(--cos-primary) !important;
+  border-color: var(--cos-primary) !important;
+}
+.btn-primary:hover {
+  background: var(--cos-primary-dark) !important;
+  border-color: var(--cos-primary-dark) !important;
+}
+.btn-outline-primary {
+  color: var(--cos-primary) !important;
+  border-color: var(--cos-primary) !important;
+}
+.btn-outline-primary:hover {
+  background: var(--cos-primary) !important;
+  color: #fff !important;
+}
+
+/* ── Badges ── */
+.status-badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.badge-active, .badge-approved, .badge-paid, .badge-pass { background: #d1fae5; color: #065f46; }
+.badge-inactive, .badge-rejected, .badge-fail { background: #fee2e2; color: #991b1b; }
+.badge-pending, .badge-draft, .badge-warning { background: #fef3c7; color: #92400e; }
+.badge-visitor, .badge-info { background: #dbeafe; color: #1e40af; }
+
+/* ── Tables ── */
+.cos-table { width: 100%; border-collapse: collapse; }
+.cos-table th {
+  background: #f8f9fa; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--cos-text-muted); padding: 10px 14px;
+  border-bottom: 2px solid var(--cos-border);
+  white-space: nowrap;
+}
+.cos-table td {
+  padding: 11px 14px; border-bottom: 1px solid var(--cos-border);
+  font-size: 13.5px; vertical-align: middle;
+}
+.cos-table tr:hover td { background: var(--cos-primary-light); }
+.cos-table tr:last-child td { border-bottom: none; }
+
+/* ── Forms ── */
+.form-label { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+.form-control, .form-select {
+  border-radius: 8px; border-color: var(--cos-border);
+  font-size: 13.5px;
+  transition: var(--cos-transition);
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--cos-primary);
+  box-shadow: 0 0 0 3px rgba(26,107,60,0.12);
+}
+.form-section-title {
+  font-size: 13px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--cos-primary);
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--cos-primary-light);
+  margin-bottom: 1rem; margin-top: 1.5rem;
+}
+
+/* ── Loading spinner ── */
+.cos-spinner {
+  display: flex; align-items: center; justify-content: center;
+  padding: 3rem; color: var(--cos-text-muted);
+  flex-direction: column; gap: 12px;
+}
+
+/* ── Empty state ── */
+.cos-empty {
+  text-align: center; padding: 3rem 1rem;
+  color: var(--cos-text-muted);
+}
+.cos-empty i { font-size: 3rem; opacity: 0.3; margin-bottom: 1rem; display: block; }
+
+/* ── Modal tweaks ── */
+.modal-header {
+  background: var(--cos-primary);
+  color: white;
+  border-radius: calc(var(--cos-radius) - 1px) calc(var(--cos-radius) - 1px) 0 0;
+}
+.modal-header .btn-close { filter: invert(1); }
+.modal-content { border-radius: var(--cos-radius); border: none; box-shadow: var(--cos-shadow-lg); }
+
+/* ── Responsive sidebar collapse ── */
+@media (max-width: 768px) {
+  :root { --cos-sidebar-width: 0px; }
+}
+
+/* ── Animations ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up { animation: fadeInUp 0.25s ease forwards; }
+
+/* ── Chart containers ── */
+.chart-wrapper { position: relative; }
+.chart-wrapper canvas { max-height: 300px; }
+
+/* ── Sidebar nav item active indicator ── */
+.nav-link-active { background: var(--cos-sidebar-active) !important; }

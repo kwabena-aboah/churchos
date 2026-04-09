@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<style>
+  @page { size: A5; margin: 15mm; }
+  body { font-family: Arial, sans-serif; font-size: 12px; color: #1a1a2e; }
+  .header { text-align: center; border-bottom: 2px solid #1a6b3c; padding-bottom: 12px; margin-bottom: 16px; }
+  .logo { max-height: 60px; margin-bottom: 8px; }
+  .church-name { font-size: 18px; font-weight: bold; color: #1a6b3c; }
+  .church-sub { font-size: 10px; color: #666; }
+  .receipt-title { font-size: 14px; font-weight: bold; text-align: center; margin: 12px 0; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid #1a6b3c; padding: 6px; color: #1a6b3c; }
+  .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; }
+  .label { color: #666; font-size: 11px; }
+  .value { font-weight: bold; }
+  .amount-box { background: #e8f5ee; border: 1px solid #1a6b3c; text-align: center; padding: 12px; margin: 16px 0; border-radius: 4px; }
+  .amount-box .amount { font-size: 24px; font-weight: bold; color: #1a6b3c; }
+  .footer { text-align: center; margin-top: 20px; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
+  .qr-note { text-align: center; font-size: 9px; color: #999; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="header">
+  {% if logo_url %}
+  <img src="{{ logo_url }}" class="logo" alt="Logo" />
+  {% endif %}
+  <div class="church-name">{{ church.church_name }}</div>
+  <div class="church-sub">{{ church.address }}{% if church.city %}, {{ church.city }}{% endif %}</div>
+  {% if church.phone %}<div class="church-sub">Tel: {{ church.phone }}</div>{% endif %}
+</div>
+
+<div class="receipt-title">Official Receipt</div>
+
+<div class="row">
+  <span class="label">Receipt Number</span>
+  <span class="value">{{ transaction.receipt_number }}</span>
+</div>
+<div class="row">
+  <span class="label">Reference</span>
+  <span class="value">{{ transaction.reference }}</span>
+</div>
+<div class="row">
+  <span class="label">Date</span>
+  <span class="value">{{ transaction.transaction_date|date:"d F Y" }}</span>
+</div>
+<div class="row">
+  <span class="label">Member</span>
+  <span class="value">{% if transaction.member %}{{ transaction.member.get_full_name }}{% else %}Anonymous{% endif %}</span>
+</div>
+{% if transaction.member %}
+<div class="row">
+  <span class="label">Member Number</span>
+  <span class="value">{{ transaction.member.member_number }}</span>
+</div>
+{% endif %}
+<div class="row">
+  <span class="label">Transaction Type</span>
+  <span class="value">{{ transaction.get_transaction_type_display }}</span>
+</div>
+<div class="row">
+  <span class="label">Payment Method</span>
+  <span class="value">{{ transaction.get_payment_method_display }}</span>
+</div>
+{% if transaction.payment_reference %}
+<div class="row">
+  <span class="label">Payment Reference</span>
+  <span class="value">{{ transaction.payment_reference }}</span>
+</div>
+{% endif %}
+{% if transaction.cause %}
+<div class="row">
+  <span class="label">Cause / Project</span>
+  <span class="value">{{ transaction.cause.name }}</span>
+</div>
+{% endif %}
+{% if transaction.notes %}
+<div class="row">
+  <span class="label">Notes</span>
+  <span class="value">{{ transaction.notes }}</span>
+</div>
+{% endif %}
+
+<div class="amount-box">
+  <div style="font-size:11px; color:#666; margin-bottom:4px;">AMOUNT RECEIVED</div>
+  <div class="amount">{{ church.currency_symbol }}{{ transaction.amount|floatformat:2 }}</div>
+</div>
+
+<div class="footer">
+  <p>Thank you for your faithfulness and generosity.</p>
+  <p>This is an official receipt of <strong>{{ church.church_name }}</strong>.</p>
+  <p style="margin-top:6px">Generated: {{ generated_at|date:"d M Y, H:i" }}</p>
+</div>
+</body>
+</html>
