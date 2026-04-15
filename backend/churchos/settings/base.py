@@ -1,9 +1,11 @@
 """
 ChurchOS — Base Django Settings
 """
+import os
 from pathlib import Path
 from decouple import config, Csv
 from datetime import timedelta
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -91,17 +93,12 @@ WSGI_APPLICATION = "churchos.wsgi.application"
 
 # ── Database ──────────────────────────────────────────────────────────────────
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": config("DB_NAME", default="churchos_db"),
-        "USER": config("DB_USER", default="churchos_user"),
-        "PASSWORD": config("DB_PASSWORD", default="churchos_pass"),
-        "HOST": config("DB_HOST", default="localhost"),
-        "PORT": config("DB_PORT", default="5432"),
-        "OPTIONS": {
-            "connect_timeout": 10,
-        },
-    }
+    "default": dj_database_url.parse(
+        config(
+            "DATABASE_URL",
+            default="postgres://postgres.suwcimkjtebauamxxxre:YCBlSTEtNIctaQvo@aws-1-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require",
+        )
+    )
 }
 
 # DATABASES = {
