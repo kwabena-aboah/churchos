@@ -1,12 +1,12 @@
 {
     "experimentalServices": {
         "frontend": {
-            "entrypoint": "frontend",
+            "churchos": "frontend",
             "routePrefix": "/",
             "framework": "vite"
         },
         "backend": {
-            "entrypoint": "backend",
+            "churchos": "backend",
             "routePrefix": "/_/backend"
         }
     }
