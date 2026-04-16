@@ -1,8 +1,16 @@
-[ChurchOS]
+[churchos]
+name = "churchos"
+version = "0.1.0"
+description = "Churchos"
 requires-python = ">=3.12"
+dependencies = [
+    "Django",
+    "gunicorn",
+    "whitenoise",
+    "psycopg2-binary",
+    "django-cors-headers"
+]
 
-[project.scripts]
-app = "backend.wsgi:application"
-
-[tool.vercel.scripts]
-build = "python build.py"
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
