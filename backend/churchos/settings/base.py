@@ -103,9 +103,14 @@ WSGI_APPLICATION = "churchos.wsgi.application"
 #         )
 #     }
 
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise Exception("DATABASE_URL is not set in environment variables")
+
 DATABASES = {
     "default": dj_database_url.parse(
-        config("DATABASE_URL"),
+        DATABASE_URL,
         conn_max_age=600,
         ssl_require=True
     )
