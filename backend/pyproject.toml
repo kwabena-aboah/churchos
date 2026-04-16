@@ -1,8 +1,0 @@
-[ChurchOS]
-requires-python = ">=3.12"
-
-[project.scripts]
-app = "backend.wsgi:application"
-
-[tool.vercel.scripts]
-build = "python build.py"
