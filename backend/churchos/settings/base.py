@@ -195,10 +195,15 @@ SPECTACULAR_SETTINGS = {
 # ── CORS ──────────────────────────────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = config(
     "CORS_ALLOWED_ORIGINS",
-    default="http://localhost:5173,http://localhost:3000",
+    default="http://localhost:5173,http://localhost:3000, https://*.vercel.app",
     cast=Csv(),
 )
 CORS_ALLOW_CREDENTIALS = True
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
 # ── Internationalization ──────────────────────────────────────────────────────
 LANGUAGE_CODE = "en-us"
