@@ -92,14 +92,16 @@ TEMPLATES = [
 WSGI_APPLICATION = "churchos.wsgi.application"
 
 # ── Database ──────────────────────────────────────────────────────────────────
-DATABASES = {
-    "default": dj_database_url.parse(
-        config(
-            "DATABASE_URL",
-            default="postgres://postgres.suwcimkjtebauamxxxre:YCBlSTEtNIctaQvo@aws-1-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require",
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,        # persistent connections
+            conn_health_checks=True,
+            ssl_require=True
         )
-    )
-}
+    }
 
 # DATABASES = {
 #     'default': {
