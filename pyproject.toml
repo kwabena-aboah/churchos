@@ -1,15 +1,29 @@
 [project]
 name = "churchos"
 version = "0.1.0"
-description = "churchos"
-requires-python = ">=3.12"
+description = "ChurchOS Backend System"
+requires-python = ">=3.10"
+
 dependencies = [
-    "Django",
+    "Django>=4.2",
+    "djangorestframework",
     "gunicorn",
     "whitenoise",
     "psycopg2-binary",
     "django-cors-headers"
 ]
+
+[tool.poetry]
+name = "churchos"
+version = "0.1.0"
+description = "ChurchOS Backend System"
+authors = ["You"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0"
 
 [build-system]
 requires = ["setuptools", "wheel"]
