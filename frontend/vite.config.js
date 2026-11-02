@@ -29,8 +29,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['vue', 'vue-router', 'pinia', 'axios'],
-          charts: ['chart.js', 'vue-chartjs'],
-          bootstrap: ['bootstrap']
+          charts: ['chart.js', 'vue-chartjs']
         }
       }
     }

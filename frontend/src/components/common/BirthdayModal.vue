@@ -8,6 +8,7 @@
         </div>
         <div class="modal-body">
           <div v-if="loading" class="cos-spinner"><div class="spinner-border text-primary"></div></div>
+          <div v-else-if="loadError" class="alert alert-danger mb-0">{{ loadError }}</div>
           <div v-else-if="members.length === 0" class="cos-empty">
             <i class="bi bi-emoji-smile"></i>
             <p>No birthdays today!</p>
@@ -37,6 +38,7 @@ defineEmits(['close'])
 
 const members = ref([])
 const loading = ref(true)
+const loadError = ref('')
 
 const initials = (name) => name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'
 
@@ -44,7 +46,12 @@ onMounted(async () => {
   try {
     const { data } = await membersApi.birthdaysToday()
     members.value = Array.isArray(data) ? data : (data.results || [])
-  } catch {} finally { loading.value = false }
+  } catch (error) {
+    loadError.value = 'Could not load birthdays. Please try again.'
+    console.error('Could not load birthdays:', error)
+  } finally {
+    loading.value = false
+  }
 })
 </script>
 

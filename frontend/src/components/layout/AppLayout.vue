@@ -156,7 +156,9 @@ onMounted(async () => {
   try {
     const { data } = await membersApi.birthdaysToday()
     birthdayCount.value = data.count || (Array.isArray(data) ? data.length : 0)
-  } catch {}
+  } catch (error) {
+    console.warn('Could not load today’s birthday count:', error)
+  }
 })
 </script>
 

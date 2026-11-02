@@ -3,6 +3,8 @@ import axios from 'axios'
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/_/backend',
   // baseURL: 'http://127.0.0.1:8000/api/v1',
+  // baseURL: import.meta.env.VITE_API_BASE_URL || '/_/backend',
+  baseURL: 'http://127.0.0.1:8000/api/v1',
   timeout: 30000,
   headers: { 'Content-Type': 'application/json' }
 })
@@ -89,6 +91,7 @@ export const settingsApi = {
   getPublic: () => api.get('/core/settings/public/'),
   get: () => api.get('/core/settings/'),
   update: (data) => api.patch('/core/settings/', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  chat: (messages) => api.post('/core/assistant/chat/', { messages }),
   getZones: () => api.get('/core/zones/'),
   getCellGroups: (params) => api.get('/core/cell-groups/', { params }),
   getServiceTypes: () => api.get('/core/service-types/'),
@@ -171,6 +174,11 @@ export const sermonsApi = {
   getSpeakers: () => api.get('/sermons/speakers/'),
   generateSummary: (id) => api.post(`/sermons/${id}/generate-summary/`),
   transcribe: (id) => api.post(`/sermons/${id}/transcribe/`),
+  uploadAudio: (id, file) => {
+    const data = new FormData()
+    data.append('audio_file', file)
+    return api.post(`/sermons/${id}/upload-audio/`, data)
+  },
 }
 
 export const budgetApi = {

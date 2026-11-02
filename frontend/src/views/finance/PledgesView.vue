@@ -69,7 +69,7 @@ const form = ref({ cause: null, pledge_amount: '', due_date: '', notes: '' })
 
 async function load() { loading.value=true; const {data}=await financeApi.getPledges(); pledges.value=data.results||data; loading.value=false }
 function openModal() { form.value={cause:null,pledge_amount:'',due_date:'',notes:''}; selectedMember.value=null; memberSearch.value=''; showModal.value=true }
-let t; async function searchMembers() { clearTimeout(t); t=setTimeout(async()=>{ if(memberSearch.value.length<2){memberResults.value=[];return}; const {data}=await membersApi.list({search:memberSearch.value,page_size:8}); memberResults.value=data.results||data },300) }
+let t; async function searchMembers() { clearTimeout(t); t=setTimeout(async()=>{ if(memberSearch.value.length<2){memberResults.value=[];return} const {data}=await membersApi.list({search:memberSearch.value,page_size:8}); memberResults.value=data.results||data },300) }
 function selectMember(m) { selectedMember.value=m; form.value.member=m.id; memberSearch.value=''; memberResults.value=[] }
 async function savePledge() { saving.value=true; try { await financeApi.createPledge({...form.value,member:selectedMember.value.id}); showModal.value=false; load() } finally { saving.value=false } }
 onMounted(async()=>{ load(); const {data}=await financeApi.getCauses(); causes.value=data.results||data })

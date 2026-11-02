@@ -119,7 +119,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import dayjs from 'dayjs'
 import { financeApi } from '@/api'
 import { useSettingsStore } from '@/stores/settings'
@@ -157,7 +157,9 @@ async function loadSummary() {
     summaryCards.value[1].value = fmtCur(data.total_offerings || 0)
     summaryCards.value[2].value = fmtCur(data.total_donations || 0)
     summaryCards.value[3].value = fmtCur(data.total_expenses || 0)
-  } catch {}
+  } catch (error) {
+    console.error('Could not load finance summary:', error)
+  }
 }
 
 async function loadTransactions(page = 1) {

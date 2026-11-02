@@ -263,12 +263,12 @@ def generate_ai_weekly_briefing():
     """
     from apps.core.models import ChurchSettings
     from apps.communication.views import send_email
-    from django.conf import settings
+    from apps.core.ai import generate_ai_response, get_configured_provider
     import datetime
 
     church = ChurchSettings.load()
-    if not church.ai_weekly_briefing or not settings.ANTHROPIC_API_KEY:
-        return "AI briefing disabled or not configured."
+    if not church.ai_weekly_briefing:
+        return "AI weekly briefing is disabled."
 
     today = timezone.now().date()
     last_week = today - datetime.timedelta(days=7)
@@ -303,23 +303,28 @@ STATISTICS:
 - Events this coming week: {upcoming_events}
 """
 
-    try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
-        message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=1000,
-            messages=[{
-                "role": "user",
-                "content": f"""You are a pastoral assistant. Write a concise, warm weekly briefing for the church leadership based on the following data. 
-Use plain text (no markdown). Include highlights, any areas of concern, and one encouraging note.
-
-{context}"""
-            }]
+    if get_configured_provider(church) == "built_in":
+        briefing_text = (
+            f"Weekly briefing for {church.church_name} — week ending {today}.\n\n"
+            f"Active members: {total_members}\n"
+            f"New members this week: {new_this_week}\n"
+            f"Income this week: {church.currency_symbol}{income_week:,.2f}\n"
+            f"Open follow-up cases: {open_cases}\n"
+            f"Events coming up: {upcoming_events}\n\n"
+            "Encouragement: Thank you for faithfully caring for your church community."
         )
-        briefing_text = message.content[0].text
-    except Exception as e:
-        briefing_text = f"AI briefing generation failed: {e}\n\n{context}"
+    else:
+        briefing_text, _ = generate_ai_response(
+            church,
+            [{
+                "role": "user",
+                "content": (
+                    "Write a concise, warm weekly briefing for church leadership based "
+                    "on these statistics. Use plain text. Include highlights, areas of "
+                    f"concern, and one encouraging note.\n{context}"
+                ),
+            }],
+        )
 
     # Send to configured recipients
     recipients = [r.strip() for r in church.ai_briefing_recipients.split(",") if r.strip()]

@@ -1,7 +1,11 @@
-from rest_framework import viewsets, generics, status
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+from rest_framework import serializers, viewsets, generics, status
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from drf_spectacular.utils import extend_schema
 
 from .models import ChurchSettings, ServiceType, Zone, CellGroup
 from .serializers import (
@@ -11,7 +15,68 @@ from .serializers import (
     ZoneSerializer,
     CellGroupSerializer,
 )
-from .permissions import IsAdminOrReadOnly, IsSuperAdmin
+from .permissions import IsAdminOrAbove, IsAdminOrReadOnly
+from .ai import AIProviderError, generate_ai_response
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+@require_GET
+def health_check(request):
+    return JsonResponse({"status": "ok"})
+
+
+class AIChatMessageSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=("user", "assistant"))
+    content = serializers.CharField(max_length=4000, trim_whitespace=True)
+
+
+class AIChatRequestSerializer(serializers.Serializer):
+    messages = AIChatMessageSerializer(many=True, min_length=1, max_length=10)
+
+    def validate_messages(self, messages):
+        if messages[-1]["role"] != "user":
+            raise serializers.ValidationError("The last message must be from the user.")
+        return messages
+
+
+class AIChatResponseSerializer(serializers.Serializer):
+    reply = serializers.CharField()
+    provider = serializers.ChoiceField(choices=("anthropic", "openai", "built_in"))
+
+
+class AIChatView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        request=AIChatRequestSerializer,
+        responses=AIChatResponseSerializer,
+    )
+    def post(self, request):
+        serializer = AIChatRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        church = ChurchSettings.get_cached()
+        if not church.enable_ai_features:
+            return Response(
+                {"detail": "AI features are disabled in system settings."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            reply, provider = generate_ai_response(
+                church,
+                serializer.validated_data["messages"],
+            )
+        except AIProviderError:
+            logger.exception("Configured AI provider request failed")
+            return Response(
+                {"detail": "The configured AI provider could not process this request."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response({"reply": reply, "provider": provider})
 
 
 class ChurchSettingsView(generics.RetrieveUpdateAPIView):
@@ -22,7 +87,7 @@ class ChurchSettingsView(generics.RetrieveUpdateAPIView):
     """
 
     serializer_class = ChurchSettingsSerializer
-    permission_classes = [IsAuthenticated, IsSuperAdmin]
+    permission_classes = [IsAuthenticated, IsAdminOrAbove]
 
     def get_object(self):
         return ChurchSettings.load()

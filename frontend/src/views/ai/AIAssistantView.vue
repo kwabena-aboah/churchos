@@ -4,6 +4,16 @@
       <div>
         <h1 class="page-title"><i class="bi bi-robot me-2 text-primary"></i>AI Assistant</h1>
         <p class="page-subtitle">Ask questions about your church data in plain language</p>
+        <p v-if="settingsLoading" class="small text-muted mb-0">Loading AI settings…</p>
+        <div v-else-if="settingsLoadError" class="alert alert-warning py-2 mt-2 mb-0">
+          {{ settingsLoadError }}
+          <button class="btn btn-link btn-sm p-0 ms-2" @click="loadAISettings">Retry</button>
+        </div>
+        <p v-if="activeProvider === 'built_in'" class="small text-muted mb-0">
+          Built-in local assistant active. Add an API key in
+          <RouterLink to="/settings" class="text-primary">Settings → Integrations & AI</RouterLink>
+          for generative responses.
+        </p>
       </div>
     </div>
 
@@ -68,14 +78,14 @@
             rows="2"
             @keydown.enter.exact.prevent="sendMessage"
             @keydown.enter.shift.exact="() => {}"
-            :disabled="thinking || !aiEnabled"
+            :disabled="thinking || settingsLoading || !aiEnabled"
           ></textarea>
-          <button class="btn btn-primary chat-send-btn" @click="sendMessage" :disabled="thinking || !inputText.trim() || !aiEnabled">
+          <button class="btn btn-primary chat-send-btn" @click="sendMessage" :disabled="thinking || settingsLoading || !inputText.trim() || !aiEnabled">
             <i class="bi bi-send-fill" v-if="!thinking"></i>
             <span class="spinner-border spinner-border-sm" v-else></span>
           </button>
         </div>
-        <div v-if="!aiEnabled" class="text-center text-muted small mt-2">
+        <div v-if="!settingsLoading && !settingsLoadError && !aiEnabled" class="text-center text-muted small mt-2">
           <i class="bi bi-info-circle me-1"></i>
           AI features are disabled. Enable them in
           <RouterLink to="/settings" class="text-primary">Settings → Integrations</RouterLink>.
@@ -94,11 +104,10 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted, computed } from 'vue'
+import { ref, nextTick, computed, onMounted } from 'vue'
 import dayjs from 'dayjs'
-import api from '@/api'
 import { useSettingsStore } from '@/stores/settings'
-import { financeApi, membersApi } from '@/api'
+import { settingsApi } from '@/api'
 
 const settingsStore = useSettingsStore()
 const aiEnabled = computed(() => settingsStore.settings.enable_ai_features)
@@ -106,8 +115,26 @@ const aiEnabled = computed(() => settingsStore.settings.enable_ai_features)
 const messages = ref([])
 const inputText = ref('')
 const thinking = ref(false)
+const settingsLoading = ref(true)
+const settingsLoadError = ref('')
 const chatContainer = ref(null)
+const activeProvider = ref('')
 let msgId = 0
+
+async function loadAISettings() {
+  settingsLoading.value = true
+  settingsLoadError.value = ''
+  try {
+    const loaded = await settingsStore.loadPublic()
+    if (!loaded) {
+      settingsLoadError.value = settingsStore.loadError || 'Could not load AI settings.'
+    }
+  } finally {
+    settingsLoading.value = false
+  }
+}
+
+onMounted(loadAISettings)
 
 const features = [
   {
@@ -142,23 +169,15 @@ const features = [
   },
 ]
 
-async function buildContext() {
-  // Gather real data to give the AI context
-  const context = { church_name: settingsStore.settings.church_name, date: dayjs().format('MMMM D, YYYY') }
-  try {
-    const [finRes, memRes] = await Promise.all([
-      financeApi.summary({ period: 'this_month' }),
-      membersApi.list({ page_size: 1 }),
-    ])
-    context.finance = finRes.data
-    context.member_count = memRes.data.count
-  } catch {}
-  return context
-}
-
 function formatMessage(text) {
-  // Convert markdown-like formatting to HTML
-  return text
+  const escaped = text.replace(/[&<>"']/g, character => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[character])
+  return escaped
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/`(.*?)`/g, '<code>$1</code>')
@@ -169,7 +188,7 @@ function formatMessage(text) {
 
 async function sendMessage() {
   const text = inputText.value.trim()
-  if (!text || thinking.value) return
+  if (!text || thinking.value || settingsLoading.value || !aiEnabled.value) return
 
   inputText.value = ''
   messages.value.push({ id: ++msgId, role: 'user', content: text, time: dayjs().format('h:mm A') })
@@ -177,42 +196,30 @@ async function sendMessage() {
 
   thinking.value = true
   try {
-    const context = await buildContext()
-    const systemPrompt = `You are a pastoral and church management AI assistant for ${context.church_name}. 
-Today is ${context.date}.
-Current data: Active members: ${context.member_count || 'unknown'}.
-Finance this month: Income ${context.finance?.this_month || 'unknown'}, Total tithes: ${context.finance?.total_tithes || 'unknown'}.
-Be warm, professional, and concise. Use bullet points for lists. Provide actionable insights.`
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: [
-          ...messages.value
-            .filter(m => m.role !== 'assistant' || m.id < msgId)
-            .slice(-10)
-            .map(m => ({ role: m.role, content: m.content })),
-          { role: 'user', content: text }
-        ],
-      })
-    })
-    const data = await response.json()
-    const reply = data.content?.[0]?.text || 'I could not generate a response. Please check your API configuration in Settings.'
-    messages.value.push({ id: ++msgId, role: 'assistant', content: reply, time: dayjs().format('h:mm A') })
+    const history = messages.value
+      .slice(-10)
+      .map(message => ({ role: message.role, content: message.content }))
+    const { data } = await settingsApi.chat(history)
+    activeProvider.value = data.provider
+    messages.value.push({ id: ++msgId, role: 'assistant', content: data.reply, time: dayjs().format('h:mm A') })
   } catch (e) {
     messages.value.push({
       id: ++msgId, role: 'assistant',
-      content: 'I encountered an error. Please ensure the Anthropic API key is configured in Settings → Integrations → AI Features.',
+      content: getRequestError(e),
       time: dayjs().format('h:mm A')
     })
   } finally {
     thinking.value = false
     await scrollToBottom()
   }
+}
+
+function getRequestError(error) {
+  const response = error.response?.data
+  const details = response?.errors || response?.detail || response?.message
+  if (typeof details === 'string') return details
+  if (details) return JSON.stringify(details)
+  return 'The assistant could not respond. Please check the AI settings and try again.'
 }
 
 async function sendSuggestion(prompt) {

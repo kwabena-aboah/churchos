@@ -159,7 +159,7 @@ import {
 import dayjs from 'dayjs'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
-import { financeApi, membersApi, eventsApi, followupApi } from '@/api'
+import { financeApi, eventsApi, followupApi } from '@/api'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler)
 

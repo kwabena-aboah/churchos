@@ -36,12 +36,49 @@
       <div class="col-lg-4">
         <div class="cos-card mb-3">
           <h6 class="fw-bold mb-3">AI Tools</h6>
-          <div class="d-grid gap-2">
-            <button class="btn btn-outline-primary btn-sm" @click="generateSummary" :disabled="aiLoading || !sermon.transcript"><span v-if="aiLoading" class="spinner-border spinner-border-sm me-2"></span><i v-else class="bi bi-robot me-2"></i>Generate AI Summary</button>
-            <button class="btn btn-outline-secondary btn-sm" @click="transcribe" :disabled="aiLoading || !sermon.audio_file"><i class="bi bi-soundwave me-2"></i>Transcribe Audio</button>
+          <div v-if="!aiEnabled" class="alert alert-warning py-2 small">
+            AI features are disabled. Enable them in
+            <RouterLink to="/settings" class="alert-link">Settings → Integrations & AI</RouterLink>.
           </div>
-          <div v-if="!sermon.audio_file" class="text-muted small mt-2"><i class="bi bi-info-circle me-1"></i>Upload an audio file to enable transcription.</div>
-          <div v-if="!sermon.transcript" class="text-muted small mt-1"><i class="bi bi-info-circle me-1"></i>Transcription required for AI summary.</div>
+          <div v-else-if="!sermon.audio_file" class="mb-3">
+            <label class="form-label small">Upload audio (maximum 25 MB)</label>
+            <input
+              type="file"
+              class="form-control form-control-sm"
+              accept="audio/*"
+              :disabled="aiAction !== ''"
+              @change="selectAudio"
+            />
+            <button
+              class="btn btn-outline-secondary btn-sm w-100 mt-2"
+              @click="uploadAudio"
+              :disabled="!audioFile || aiAction !== ''"
+            >
+              <span v-if="aiAction === 'upload'" class="spinner-border spinner-border-sm me-2"></span>
+              <i v-else class="bi bi-upload me-2"></i>Upload Audio
+            </button>
+          </div>
+          <div v-else class="text-muted small mb-3">
+            <i class="bi bi-file-earmark-music me-1"></i>Audio is attached to this sermon.
+          </div>
+          <div class="d-grid gap-2">
+            <button class="btn btn-outline-primary btn-sm" @click="generateSummary" :disabled="!aiEnabled || aiAction !== '' || !sermon.transcript">
+              <span v-if="aiAction === 'summary'" class="spinner-border spinner-border-sm me-2"></span>
+              <i v-else class="bi bi-robot me-2"></i>Generate AI Summary
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" @click="transcribe" :disabled="!aiEnabled || aiAction !== '' || !sermon.audio_file">
+              <span v-if="aiAction === 'transcribe'" class="spinner-border spinner-border-sm me-2"></span>
+              <i v-else class="bi bi-soundwave me-2"></i>Transcribe Audio
+            </button>
+          </div>
+          <div v-if="aiEnabled && sermon.audio_file && !sermon.transcript" class="text-muted small mt-2">
+            <i class="bi bi-info-circle me-1"></i>Transcription requires an OpenAI API key configured in Settings.
+          </div>
+          <div v-if="aiEnabled && sermon.transcript" class="text-muted small mt-2">
+            <i class="bi bi-info-circle me-1"></i>Summary generation requires a configured Anthropic or OpenAI API key.
+          </div>
+          <div v-if="aiError" class="alert alert-danger py-2 small mt-3 mb-0" role="alert">{{ aiError }}</div>
+          <div v-if="aiSuccess" class="alert alert-success py-2 small mt-3 mb-0" role="status">{{ aiSuccess }}</div>
         </div>
         <div class="cos-card" v-if="sermon.ai_scriptures_extracted?.length">
           <h6 class="fw-bold mb-2">Referenced Scriptures</h6>
@@ -52,16 +89,88 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted } from "vue"
+import { ref, computed, onMounted } from "vue"
 import { useRoute } from "vue-router"
 import dayjs from "dayjs"
 import { sermonsApi } from "@/api"
+import { useSettingsStore } from "@/stores/settings"
 const route = useRoute()
-const sermon = ref(null); const aiLoading = ref(false)
+const settingsStore = useSettingsStore()
+const sermon = ref(null)
+const audioFile = ref(null)
+const aiAction = ref("")
+const aiError = ref("")
+const aiSuccess = ref("")
+const aiEnabled = computed(() => settingsStore.settings.enable_ai_features)
 const fmt = d => d ? dayjs(d).format("DD MMM YYYY") : "—"
-async function load() { const { data } = await sermonsApi.get(route.params.id); sermon.value = data }
-async function generateSummary() { aiLoading.value = true; try { const { data } = await sermonsApi.generateSummary(route.params.id); sermon.value = { ...sermon.value, ...data } } finally { aiLoading.value = false } }
-async function transcribe() { aiLoading.value = true; try { await sermonsApi.transcribe(route.params.id); await load() } finally { aiLoading.value = false } }
-onMounted(load)
+async function load() {
+  const [response, settingsLoaded] = await Promise.all([
+    sermonsApi.get(route.params.id),
+    settingsStore.loadPublic(),
+  ])
+  sermon.value = response.data
+  if (!settingsLoaded) aiError.value = settingsStore.loadError
+}
+function selectAudio(event) {
+  audioFile.value = event.target.files?.[0] || null
+  aiError.value = ""
+  aiSuccess.value = ""
+}
+function getErrorMessage(error) {
+  const response = error.response?.data
+  const detail = response?.errors?.detail || response?.detail || response?.message
+  if (typeof detail === "string") return detail
+  if (Array.isArray(detail)) return detail.join(", ")
+  return "The AI request failed. Check your AI settings and try again."
+}
+async function uploadAudio() {
+  if (!audioFile.value) return
+  if (audioFile.value.size > 25 * 1024 * 1024) {
+    aiError.value = "Audio files must be 25 MB or smaller."
+    return
+  }
+  aiAction.value = "upload"
+  aiError.value = ""
+  aiSuccess.value = ""
+  try {
+    await sermonsApi.uploadAudio(route.params.id, audioFile.value)
+    audioFile.value = null
+    await load()
+    aiSuccess.value = "Audio uploaded. You can now transcribe it."
+  } catch (error) {
+    aiError.value = getErrorMessage(error)
+  } finally {
+    aiAction.value = ""
+  }
+}
+async function generateSummary() {
+  aiAction.value = "summary"
+  aiError.value = ""
+  aiSuccess.value = ""
+  try {
+    const { data } = await sermonsApi.generateSummary(route.params.id)
+    sermon.value = { ...sermon.value, ...data }
+    aiSuccess.value = "AI summary generated."
+  } catch (error) {
+    aiError.value = getErrorMessage(error)
+  } finally {
+    aiAction.value = ""
+  }
+}
+async function transcribe() {
+  aiAction.value = "transcribe"
+  aiError.value = ""
+  aiSuccess.value = ""
+  try {
+    const { data } = await sermonsApi.transcribe(route.params.id)
+    sermon.value = { ...sermon.value, transcript: data.transcript }
+    aiSuccess.value = "Audio transcription completed."
+  } catch (error) {
+    aiError.value = getErrorMessage(error)
+  } finally {
+    aiAction.value = ""
+  }
+}
+onMounted(() => load().catch(error => { aiError.value = getErrorMessage(error) }))
 </script>
 <style scoped>.transcript-text{max-height:300px;overflow-y:auto;font-size:13px;line-height:1.8;color:var(--cos-text-muted);background:var(--cos-bg);padding:12px;border-radius:8px}.scripture-tag{display:inline-block;background:var(--cos-primary-light);color:var(--cos-primary);padding:2px 8px;border-radius:4px;font-size:12px;margin:3px 3px 3px 0;font-weight:600}</style>

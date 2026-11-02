@@ -252,13 +252,6 @@ const photoPreview = ref(null)
 const photoFile = ref(null)
 const photoInput = ref(null)
 
-function formatDate(val) {
-  if (!val) return null
-  if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val
-  const d = new Date(val)
-  return isNaN(d) ? null : d.toISOString().split('T')[0]
-}
-
 function buildPayload() {
   const hasFile = photoFile.value instanceof File
 

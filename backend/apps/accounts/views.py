@@ -1,10 +1,11 @@
-from rest_framework import generics, status, viewsets
+from rest_framework import generics, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
+from drf_spectacular.utils import extend_schema
 
 from .serializers import (
     CustomTokenObtainPairSerializer, UserSerializer,
@@ -44,6 +45,25 @@ class LoginView(TokenObtainPairView):
 class LogoutView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {"refresh": {"type": "string"}},
+                "required": ["refresh"],
+            }
+        },
+        responses={
+            200: {
+                "type": "object",
+                "properties": {"message": {"type": "string"}},
+            },
+            400: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}},
+            },
+        },
+    )
     def post(self, request):
         try:
             refresh_token = request.data.get("refresh")

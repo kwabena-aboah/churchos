@@ -78,9 +78,54 @@
             <div class="form-section-title">AI Features</div>
             <div class="row g-3">
               <div class="col-md-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" v-model="form.enable_ai_features" /><label class="form-check-label">Enable AI Features</label></div></div>
+              <div class="col-12" v-if="form.enable_ai_features">
+                <p class="text-muted small mb-3">API keys are encrypted and never returned to the browser. The Anthropic key supports chat and sermon summaries; OpenAI supports chat and audio transcription. If no selected provider key is configured, ChurchOS uses its built-in local assistant.</p>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">AI Provider</label>
+                  <select v-model="form.ai_provider" class="form-select">
+                    <option value="auto">Automatic (Anthropic, then OpenAI)</option>
+                    <option value="anthropic">Anthropic</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="built_in">Built-in assistant only</option>
+                  </select>
+                </div>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Anthropic API Key</label>
+                    <input v-model="form.ai_anthropic_api_key" type="password" class="form-control" autocomplete="new-password" :placeholder="form.has_ai_anthropic_api_key ? 'Saved — leave blank to keep current key' : 'Optional'" />
+                    <div class="form-check mt-2" v-if="form.has_ai_anthropic_api_key">
+                      <input v-model="form.clear_ai_anthropic_api_key" class="form-check-input" type="checkbox" id="clear-anthropic-key" />
+                      <label class="form-check-label small" for="clear-anthropic-key">Remove saved Anthropic key</label>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Anthropic Model</label>
+                    <input v-model="form.ai_anthropic_model" class="form-control" placeholder="claude-sonnet-4-20250514" />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">OpenAI API Key</label>
+                    <input v-model="form.ai_openai_api_key" type="password" class="form-control" autocomplete="new-password" :placeholder="form.has_ai_openai_api_key ? 'Saved — leave blank to keep current key' : 'Optional'" />
+                    <div class="form-check mt-2" v-if="form.has_ai_openai_api_key">
+                      <input v-model="form.clear_ai_openai_api_key" class="form-check-input" type="checkbox" id="clear-openai-key" />
+                      <label class="form-check-label small" for="clear-openai-key">Remove saved OpenAI key</label>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">OpenAI Model</label>
+                    <input v-model="form.ai_openai_model" class="form-control" placeholder="gpt-4o-mini" />
+                  </div>
+                </div>
+                <div class="alert alert-info py-2 mt-3 mb-0">
+                  <strong>No-key fallback:</strong> ChurchOS Built-in Assistant (local). It answers basic membership and finance questions without sending data to an external provider.
+                </div>
+              </div>
             </div>
           </div>
           <div class="alert alert-success mt-3" v-if="saved"><i class="bi bi-check-circle me-2"></i>Settings saved successfully.</div>
+          <div class="alert alert-danger mt-3" v-if="saveError" role="alert">
+            <strong>Could not save settings.</strong>
+            <div>{{ saveError }}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -93,7 +138,7 @@ import { settingsApi } from "@/api"
 import { useSettingsStore } from "@/stores/settings"
 const settingsStore = useSettingsStore()
 const monthName = m => dayjs().month(m-1).format("MMMM")
-const activeTab = ref("church"); const saving = ref(false); const saved = ref(false)
+const activeTab = ref("church"); const saving = ref(false); const saved = ref(false); const saveError = ref("")
 const logoFile = ref(null); const faviconFile = ref(null)
 const form = ref({})
 const tabs = [
@@ -103,17 +148,53 @@ const tabs = [
   { id:"notifications", icon:"bi-bell", label:"Notifications" },
   { id:"integrations", icon:"bi-plug", label:"Integrations & AI" },
 ]
-async function load() { const { data } = await settingsApi.get(); form.value = data }
+async function load() {
+  const { data } = await settingsApi.get()
+  form.value = {
+    ...data,
+    ai_anthropic_api_key: '',
+    ai_openai_api_key: '',
+    clear_ai_anthropic_api_key: false,
+    clear_ai_openai_api_key: false,
+  }
+}
 async function save() {
-  saving.value = true; saved.value = false
+  saving.value = true; saved.value = false; saveError.value = ""
   try {
     const fd = new FormData()
-    Object.entries(form.value).forEach(([k,v]) => { if(v!==null&&v!==undefined) fd.append(k, v) })
+    Object.entries(form.value).forEach(([key, value]) => {
+      if (value === null || value === undefined || key.startsWith('has_ai_')) return
+      if (key === 'logo' || key === 'favicon') return
+      if (key === 'ai_anthropic_api_key' || key === 'ai_openai_api_key') {
+        if (value.trim()) fd.append(key, value.trim())
+        return
+      }
+      if (key.startsWith('clear_ai_')) {
+        if (value) fd.append(key, 'true')
+        return
+      }
+      fd.append(key, value)
+    })
     if (logoFile.value) fd.append("logo", logoFile.value)
     if (faviconFile.value) fd.append("favicon", faviconFile.value)
     const { data } = await settingsApi.update(fd)
+    form.value = {
+      ...form.value,
+      ...data,
+      ai_anthropic_api_key: '',
+      ai_openai_api_key: '',
+      clear_ai_anthropic_api_key: false,
+      clear_ai_openai_api_key: false,
+    }
     settingsStore.applyTheme(data)
     saved.value = true; setTimeout(() => saved.value = false, 3000)
+  } catch (error) {
+    const detail = error.response?.data
+    saveError.value = detail
+      ? Object.entries(detail)
+        .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`)
+        .join(" | ")
+      : error.message
   } finally { saving.value = false }
 }
 onMounted(load)

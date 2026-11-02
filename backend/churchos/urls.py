@@ -3,12 +3,14 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from apps.core.views import health_check
 from apps.core.reports import (
     FinanceReportView, MembersReportView, AttendanceReportView,
     PayrollReportView, TitheReportView, InventoryReportView, AuditReportExportView,
 )
 
 urlpatterns = [
+    path("health", health_check, name="health"),
     path("admin/", admin.site.urls),
     path("api/v1/auth/", include("apps.accounts.urls")),
     path("api/v1/core/", include("apps.core.urls")),
@@ -42,4 +44,3 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-

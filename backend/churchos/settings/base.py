@@ -120,11 +120,21 @@ DATABASES = {
 }
 
 # DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
+#     "default": dj_database_url.parse(
+#         DATABASE_URL or "postgres://postgres.slyxhodfydakfervqvph:q3XqQLVp2AK3LtlN@aws-1-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require",  # fallback for safety
+#         conn_max_age=600,
+#         conn_health_checks=True,
+#         ssl_require=bool(DATABASE_URL),  # only require SSL in production
+#     )
 # }
+
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
 
 # ── Cache (Redis) ─────────────────────────────────────────────────────────────
 CACHES = {
@@ -275,6 +285,10 @@ DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@churchos.app"
 # ── AI ────────────────────────────────────────────────────────────────────────
 ANTHROPIC_API_KEY = config("ANTHROPIC_API_KEY", default="")
 OPENAI_API_KEY = config("OPENAI_API_KEY", default="")
+AI_CREDENTIALS_ENCRYPTION_KEY = config(
+    "AI_CREDENTIALS_ENCRYPTION_KEY",
+    default=SECRET_KEY,
+)
 
 # ── Auditlog ──────────────────────────────────────────────────────────────────
 AUDITLOG_INCLUDE_ALL_MODELS = False

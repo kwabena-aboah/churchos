@@ -2,6 +2,7 @@ import uuid
 from django.db import models
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from .fields import EncryptedCharField
 
 
 class SingletonModel(models.Model):
@@ -105,6 +106,22 @@ class ChurchSettings(SingletonModel):
 
     # ── AI ────────────────────────────────────────────────────────────────────
     enable_ai_features = models.BooleanField(default=False)
+    ai_provider = models.CharField(
+        max_length=20,
+        choices=[
+            ("auto", "Automatic"),
+            ("anthropic", "Anthropic"),
+            ("openai", "OpenAI"),
+            ("built_in", "Built-in"),
+        ],
+        default="auto",
+    )
+    ai_anthropic_api_key = EncryptedCharField(max_length=2048, blank=True)
+    ai_openai_api_key = EncryptedCharField(max_length=2048, blank=True)
+    ai_anthropic_model = models.CharField(
+        max_length=100, default="claude-sonnet-4-20250514"
+    )
+    ai_openai_model = models.CharField(max_length=100, default="gpt-4o-mini")
     ai_weekly_briefing = models.BooleanField(default=False)
     ai_briefing_recipients = models.TextField(
         blank=True,

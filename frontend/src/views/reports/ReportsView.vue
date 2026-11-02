@@ -204,15 +204,21 @@ async function loadQuickStats() {
     ])
     quickStats.value[0].value = membersRes.data.count || '—'
     quickStats.value[1].value = fmtCur(financeRes.data.this_month || 0)
-  } catch {}
+  } catch (error) {
+    console.warn('Could not load member and finance report stats:', error)
+  }
   try {
     const { data } = await api.get('/workers/?page_size=1')
     quickStats.value[2].value = data.count || '—'
-  } catch {}
+  } catch (error) {
+    console.warn('Could not load worker report stats:', error)
+  }
   try {
     const { data } = await api.get('/inventory/summary/')
     quickStats.value[3].value = data.total_items || '—'
-  } catch {}
+  } catch (error) {
+    console.warn('Could not load inventory report stats:', error)
+  }
 }
 
 onMounted(loadQuickStats)

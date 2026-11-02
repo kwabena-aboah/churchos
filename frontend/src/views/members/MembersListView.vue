@@ -157,7 +157,7 @@ function debouncedLoad() { clearTimeout(debounceTimer); debounceTimer = setTimeo
 async function loadMembers(page = 1) {
   loading.value = true
   try {
-    const params = { page:page, page_size: 25, ...Object.fromEntries(Object.entries(filters.value).filter(([_,v]) => v)) }
+    const params = { page:page, page_size: 25, ...Object.fromEntries(Object.entries(filters.value).filter(([, value]) => value)) }
     const { data } = await membersApi.list(params)
     members.value = data.results ?? data
     if (data.count !== undefined) {

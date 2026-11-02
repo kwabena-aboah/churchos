@@ -60,9 +60,9 @@ const memberSearch=ref(""); const memberResults=ref([]); const selectedMember=re
 async function load(){const p={};if(statusFilter.value)p.status=statusFilter.value;if(priorityFilter.value)p.priority=priorityFilter.value;if(typeFilter.value)p.case_type=typeFilter.value;const{data}=await followupApi.list(p);cases.value=data.results||data}
 function openModal(){logModal.value=false;selectedMember.value=null;memberSearch.value="";form.value={case_type:"absentee",priority:"medium",description:""};showModal.value=true}
 function openLogModal(c){logModal.value=true;activeCase.value=c;logForm.value={contact_method:"call",contact_date:dayjs().format("YYYY-MM-DD"),outcome:"",next_action:""};showModal.value=true}
-let t; async function searchMembers(){clearTimeout(t);t=setTimeout(async()=>{if(memberSearch.value.length<2){memberResults.value=[];return};const{data}=await membersApi.list({search:memberSearch.value,page_size:8});memberResults.value=data.results||data},300)}
+let t; async function searchMembers(){clearTimeout(t);t=setTimeout(async()=>{if(memberSearch.value.length<2){memberResults.value=[];return}const{data}=await membersApi.list({search:memberSearch.value,page_size:8});memberResults.value=data.results||data},300)}
 function selectMember(m){selectedMember.value=m;form.value.member=m.id;memberSearch.value="";memberResults.value=[]}
-async function save(){saving.value=true;try{if(logModal.value){await followupApi.addLog(activeCase.value.id,logForm.value)}else{await followupApi.create(form.value)};showModal.value=false;load()}finally{saving.value=false}}
+async function save(){saving.value=true;try{if(logModal.value){await followupApi.addLog(activeCase.value.id,logForm.value)}else{await followupApi.create(form.value)}showModal.value=false;load()}finally{saving.value=false}}
 async function closeCase(c){const notes=prompt("Closure notes:");await followupApi.close(c.id,notes||"");load()}
 onMounted(load)
 </script>

@@ -48,6 +48,9 @@ class MemberViewSet(viewsets.ModelViewSet):
     ordering = ["last_name", "first_name"]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Member.objects.none()
+
         user = self.request.user
         qs = Member.objects.select_related("zone", "cell_group", "spouse")
         # Cell leaders only see their own cell group

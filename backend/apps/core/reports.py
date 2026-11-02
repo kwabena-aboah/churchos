@@ -11,7 +11,12 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from drf_spectacular.utils import extend_schema, OpenApiTypes
 
+_REPORT_RESPONSES = {
+    200: OpenApiTypes.OBJECT,
+    (200, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'): OpenApiTypes.BINARY,
+}
 
 def _excel_response(wb, filename):
     """Helper to return an Excel file response."""
@@ -37,6 +42,7 @@ def _get_date_range(request):
 class FinanceReportView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=_REPORT_RESPONSES)
     def get(self, request):
         from apps.finance.models import Transaction, TransactionType
         from django.db.models import Sum
@@ -148,6 +154,7 @@ class FinanceReportView(APIView):
 class MembersReportView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=_REPORT_RESPONSES)
     def get(self, request):
         from apps.members.models import Member, MemberStatus
 
@@ -219,6 +226,7 @@ class MembersReportView(APIView):
 class AttendanceReportView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=_REPORT_RESPONSES)
     def get(self, request):
         from apps.events.models import EventAttendance
         from django.db.models import Count
@@ -277,6 +285,7 @@ class AttendanceReportView(APIView):
 class PayrollReportView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=_REPORT_RESPONSES)
     def get(self, request):
         from apps.workers.models import Payslip, PayrollRun
 
@@ -343,6 +352,7 @@ class PayrollReportView(APIView):
 class TitheReportView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=_REPORT_RESPONSES)
     def get(self, request):
         from apps.finance.models import Transaction, TransactionType
         from django.db.models import Sum, Count
@@ -403,6 +413,7 @@ class TitheReportView(APIView):
 class InventoryReportView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=_REPORT_RESPONSES)
     def get(self, request):
         from apps.inventory.models import InventoryItem
         from django.db.models import Sum
@@ -465,6 +476,7 @@ class InventoryReportView(APIView):
 class AuditReportExportView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=_REPORT_RESPONSES)
     def get(self, request):
         from apps.audit.models import AuditReport
 

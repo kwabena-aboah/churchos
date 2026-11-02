@@ -15,17 +15,31 @@ export const useSettingsStore = defineStore('settings', () => {
     enable_ai_features: false,
   })
   const loaded = ref(false)
+  const loadError = ref('')
+  let publicLoadPromise
 
   async function loadPublic() {
-    if (loaded.value) return
-    try {
-      const { data } = await settingsApi.getPublic()
-      settings.value = { ...settings.value, ...data }
-      applyTheme(data)
-      loaded.value = true
-      // Update document title
-      document.title = data.church_name || 'ChurchOS'
-    } catch {}
+    if (loaded.value) return true
+    if (publicLoadPromise) return publicLoadPromise
+
+    publicLoadPromise = (async () => {
+      try {
+        const { data } = await settingsApi.getPublic()
+        settings.value = { ...settings.value, ...data }
+        applyTheme(data)
+        loaded.value = true
+        loadError.value = ''
+        document.title = data.church_name || 'ChurchOS'
+        return true
+      } catch (error) {
+        loadError.value = error.message || 'Could not load system settings.'
+        console.error('Failed to load public settings:', error)
+        return false
+      } finally {
+        publicLoadPromise = undefined
+      }
+    })()
+    return publicLoadPromise
   }
 
   function applyTheme(s) {
@@ -43,5 +57,5 @@ export const useSettingsStore = defineStore('settings', () => {
     return `${sym}${num.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
 
-  return { settings, loaded, loadPublic, applyTheme, formatCurrency }
+  return { settings, loaded, loadError, loadPublic, applyTheme, formatCurrency }
 })

@@ -69,6 +69,6 @@ async function selectYear(y) { selectedYear.value = y; const { data } = await bu
 function openModal() { lineModal.value = false; showModal.value = true }
 function openLineModal() { lineModal.value = true; showModal.value = true }
 async function approveBudget() { await budgetApi.approveYear(selectedYear.value.id); loadYears() }
-async function save() { saving.value = true; try { if (lineModal.value) { await budgetApi.createLine({ ...lineForm.value, budget_year: selectedYear.value.id }); selectYear(selectedYear.value) } else { await budgetApi.createYear(yearForm.value); loadYears() }; showModal.value = false } finally { saving.value = false } }
+async function save() { saving.value = true; try { if (lineModal.value) { await budgetApi.createLine({ ...lineForm.value, budget_year: selectedYear.value.id }); selectYear(selectedYear.value) } else { await budgetApi.createYear(yearForm.value); loadYears() } showModal.value = false } finally { saving.value = false } }
 onMounted(async () => { const { data } = await budgetApi.getCategories(); categories.value = data.results || data; loadYears() })
 </script>
